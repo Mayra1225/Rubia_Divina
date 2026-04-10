@@ -1,0 +1,6 @@
+@Rubia_Divina_HostAddress = http://localhost:5055
+
+GET {{Rubia_Divina_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

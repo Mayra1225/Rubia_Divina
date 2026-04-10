@@ -1,0 +1,15 @@
+# Backend
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
+**/*.db-shm
+**/*.db-wal
+
+# Frontend
+**/node_modules/
+**/dist/
+
+# Environment
+.env
+.env.*
