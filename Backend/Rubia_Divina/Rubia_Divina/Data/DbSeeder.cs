@@ -25,25 +25,25 @@ public static class DbSeeder
         context.SaveChanges();
 
         context.Productos.AddRange(
-            new Producto
-            {
-                Nombre = "Capuccino",
-                Categoria = "Bebida",
-                Descripcion = "Café espresso con leche cremosa.",
-                Precio = 3.50m,
-                Stock = 15,
-                UsuarioId = admin.Id
-            },
-            new Producto
-            {
-                Nombre = "Cheesecake",
-                Categoria = "Postre",
-                Descripcion = "Porción individual de cheesecake artesanal.",
-                Precio = 4.25m,
-                Stock = 8,
-                UsuarioId = admin.Id
-            }
-        );
+    new Producto
+    {
+        Nombre = "Capuccino",
+        Descripcion = "Café espresso con leche cremosa.",
+        Precio = 3.50m,
+        Stock = 15,
+        UsuarioId = admin.Id,
+        CategoriaId = 1
+    },
+    new Producto
+    {
+        Nombre = "Cheesecake",
+        Descripcion = "Porción individual de cheesecake artesanal.",
+        Precio = 4.25m,
+        Stock = 8,
+        UsuarioId = admin.Id,
+        CategoriaId = 2
+    }
+);
 
         context.SaveChanges();
     }

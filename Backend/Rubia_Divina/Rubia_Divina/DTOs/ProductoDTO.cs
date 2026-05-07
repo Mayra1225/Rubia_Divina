@@ -9,8 +9,7 @@ public class ProductoDTO
     public string Nombre { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(50)]
-    public string Categoria { get; set; } = string.Empty;
+    public int CategoriaId { get; set; }
 
     [StringLength(250)]
     public string Descripcion { get; set; } = string.Empty;

@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Producto> Productos => Set<Producto>();
+    public DbSet<Categoria> Categorias => Set<Categoria>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,5 +30,17 @@ public class AppDbContext : DbContext
             .WithMany(u => u.Productos)
             .HasForeignKey(p => p.UsuarioId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Producto>()
+            .HasOne(p => p.Categoria)
+            .WithMany(c => c.Productos)
+            .HasForeignKey(p => p.CategoriaId);
+
+        modelBuilder.Entity<Categoria>()
+            .HasData(
+                new Categoria { Id = 1, Nombre = "Bebida" },
+                new Categoria { Id = 2, Nombre = "Postre" },
+                new Categoria { Id = 3, Nombre = "Comida" }
+            );
     }
 }
