@@ -9,12 +9,16 @@ public class ProductoService
 {
     private readonly AppDbContext _context;
 
-    public ProductoService(AppDbContext context)
+    public ProductoService(
+        AppDbContext context
+    )
     {
         _context = context;
     }
 
-    public async Task<List<Producto>> ObtenerPorUsuarioAsync(int usuarioId)
+    public async Task<List<Producto>> ObtenerPorUsuarioAsync(
+        int usuarioId
+    )
     {
         return await _context.Productos
             .Include(p => p.Categoria)
@@ -23,31 +27,33 @@ public class ProductoService
             .ToListAsync();
     }
 
-    public async Task<Producto?> ObtenerUnoAsync(int id, int usuarioId)
+    public async Task<Producto?> ObtenerUnoAsync(
+        int id,
+        int usuarioId
+    )
     {
         return await _context.Productos
             .Include(p => p.Categoria)
-            .FirstOrDefaultAsync(p => p.Id == id && p.UsuarioId == usuarioId);
+            .FirstOrDefaultAsync(
+                p =>
+                    p.Id == id &&
+                    p.UsuarioId == usuarioId
+            );
     }
 
-    public async Task<Producto> CrearAsync(ProductoDTO dto, int usuarioId)
+    public async Task<Producto> CrearAsync(
+        ProductoDTO dto,
+        int usuarioId
+    )
     {
-        if (dto.Precio <= 0)
-        {
-            throw new Exception("El precio debe ser mayor a 0.");
-        }
+        var categoria = await _context.Categorias
+            .FindAsync(dto.CategoriaId);
 
-        if (dto.Stock < 0)
+        if (categoria == null)
         {
-            throw new Exception("El stock no puede ser negativo.");
-        }
-
-        var categoriaExiste = await _context.Categorias
-            .AnyAsync(c => c.Id == dto.CategoriaId);
-
-        if (!categoriaExiste)
-        {
-            throw new Exception("La categoría seleccionada no existe.");
+            throw new Exception(
+                "La categoría no existe."
+            );
         }
 
         var producto = new Producto
@@ -57,59 +63,75 @@ public class ProductoService
             Precio = dto.Precio,
             Stock = dto.Stock,
             UsuarioId = usuarioId,
-            CategoriaId = dto.CategoriaId
+            CategoriaId = dto.CategoriaId,
+            ImagenUrl = dto.ImagenUrl
         };
 
         _context.Productos.Add(producto);
 
         await _context.SaveChangesAsync();
 
-        return producto;
+        return await ObtenerUnoAsync(
+            producto.Id,
+            usuarioId
+        ) ?? producto;
     }
 
-    public async Task<Producto?> ActualizarAsync(int id, ProductoDTO dto, int usuarioId)
+    public async Task<Producto?> ActualizarAsync(
+        int id,
+        ProductoDTO dto,
+        int usuarioId
+    )
     {
-        var producto = await ObtenerUnoAsync(id, usuarioId);
+        var producto = await ObtenerUnoAsync(
+            id,
+            usuarioId
+        );
 
-        if (producto is null)
+        if (producto == null)
         {
             return null;
         }
 
-        if (dto.Precio <= 0)
-        {
-            throw new Exception("El precio debe ser mayor a 0.");
-        }
+        var categoria = await _context.Categorias
+            .FindAsync(dto.CategoriaId);
 
-        if (dto.Stock < 0)
+        if (categoria == null)
         {
-            throw new Exception("El stock no puede ser negativo.");
-        }
-
-        var categoriaExiste = await _context.Categorias
-            .AnyAsync(c => c.Id == dto.CategoriaId);
-
-        if (!categoriaExiste)
-        {
-            throw new Exception("La categoría seleccionada no existe.");
+            throw new Exception(
+                "La categoría no existe."
+            );
         }
 
         producto.Nombre = dto.Nombre.Trim();
-        producto.Descripcion = dto.Descripcion.Trim();
+        producto.Descripcion =
+            dto.Descripcion.Trim();
         producto.Precio = dto.Precio;
         producto.Stock = dto.Stock;
-        producto.CategoriaId = dto.CategoriaId;
+        producto.CategoriaId =
+            dto.CategoriaId;
+        producto.ImagenUrl =
+            dto.ImagenUrl;
 
         await _context.SaveChangesAsync();
 
-        return producto;
+        return await ObtenerUnoAsync(
+            producto.Id,
+            usuarioId
+        );
     }
 
-    public async Task<bool> EliminarAsync(int id, int usuarioId)
+    public async Task<bool> EliminarAsync(
+        int id,
+        int usuarioId
+    )
     {
-        var producto = await ObtenerUnoAsync(id, usuarioId);
+        var producto = await ObtenerUnoAsync(
+            id,
+            usuarioId
+        );
 
-        if (producto is null)
+        if (producto == null)
         {
             return false;
         }

@@ -5,15 +5,21 @@ namespace Rubia_Divina.Data;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    public AppDbContext(
+        DbContextOptions<AppDbContext> options
+    ) : base(options)
     {
     }
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
+
     public DbSet<Producto> Productos => Set<Producto>();
+
     public DbSet<Categoria> Categorias => Set<Categoria>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(
+        ModelBuilder modelBuilder
+    )
     {
         base.OnModelCreating(modelBuilder);
 
@@ -38,9 +44,21 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Categoria>()
             .HasData(
-                new Categoria { Id = 1, Nombre = "Bebida" },
-                new Categoria { Id = 2, Nombre = "Postre" },
-                new Categoria { Id = 3, Nombre = "Comida" }
+                new Categoria
+                {
+                    Id = 1,
+                    Nombre = "Bebidas"
+                },
+                new Categoria
+                {
+                    Id = 2,
+                    Nombre = "Postres"
+                },
+                new Categoria
+                {
+                    Id = 3,
+                    Nombre = "Snacks"
+                }
             );
     }
 }

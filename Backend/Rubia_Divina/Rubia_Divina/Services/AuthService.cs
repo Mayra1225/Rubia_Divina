@@ -45,7 +45,9 @@ public class AuthService
     public async Task<AuthResponse> RegisterAsync(RegisterDTO dto)
     {
         var email = dto.Email.Trim().ToLower();
-        var exists = await _context.Usuarios.AnyAsync(u => u.Email == email);
+
+        var exists = await _context.Usuarios
+            .AnyAsync(u => u.Email == email);
 
         if (exists)
         {
@@ -53,6 +55,33 @@ public class AuthService
             {
                 Success = false,
                 Message = "Ya existe un usuario registrado con ese correo."
+            };
+        }
+
+        if (dto.Password.Length < 8)
+        {
+            return new AuthResponse
+            {
+                Success = false,
+                Message = "La contraseña debe tener mínimo 8 caracteres."
+            };
+        }
+
+        if (!dto.Password.Any(char.IsUpper))
+        {
+            return new AuthResponse
+            {
+                Success = false,
+                Message = "La contraseña debe tener al menos una mayúscula."
+            };
+        }
+
+        if (!dto.Password.Any(char.IsDigit))
+        {
+            return new AuthResponse
+            {
+                Success = false,
+                Message = "La contraseña debe tener al menos un número."
             };
         }
 
@@ -64,6 +93,7 @@ public class AuthService
         };
 
         _context.Usuarios.Add(user);
+
         await _context.SaveChangesAsync();
 
         return new AuthResponse

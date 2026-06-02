@@ -2,7 +2,7 @@ import axios from 'axios'
 import { getToken } from './storageService'
 
 const api = axios.create({
-  baseURL: 'https://rubia-divina.onrender.com/api',
+    baseURL: 'https://rubiadivina-login-crud-mvc-vuenet.onrender.com/api',
 })
 
 api.interceptors.request.use(

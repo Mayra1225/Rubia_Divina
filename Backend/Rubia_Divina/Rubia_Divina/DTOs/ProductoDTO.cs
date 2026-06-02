@@ -8,9 +8,6 @@ public class ProductoDTO
     [StringLength(80)]
     public string Nombre { get; set; } = string.Empty;
 
-    [Required]
-    public int CategoriaId { get; set; }
-
     [StringLength(250)]
     public string Descripcion { get; set; } = string.Empty;
 
@@ -19,4 +16,10 @@ public class ProductoDTO
 
     [Range(0, 10000)]
     public int Stock { get; set; }
+
+    [Required]
+    public int CategoriaId { get; set; }
+
+    [StringLength(500)]
+    public string ImagenUrl { get; set; } = string.Empty;
 }
