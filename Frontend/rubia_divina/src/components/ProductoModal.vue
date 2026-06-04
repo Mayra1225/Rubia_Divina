@@ -1,131 +1,107 @@
 <template>
   <div class="modal-overlay">
     <div class="modal">
-
       <h2>
-        {{ modelValue ? 'Editar Pedido' : 'Nuevo Pedido' }}
+        {{ modelValue ? 'Editar Producto' : 'Nuevo Producto' }}
       </h2>
 
       <form @submit.prevent="guardar">
 
         <label>
-          Fecha
+          Nombre
           <input
-            v-model="form.fechaPedido"
-            type="datetime-local"
+            v-model="form.nombre"
+            type="text"
             required
           />
         </label>
 
         <label>
-          Promoción
-          <select v-model="form.promocionId">
-            <option :value="null">
-              Sin promoción
+          Categoría
+          <select
+            v-model="form.categoriaId"
+            required
+          >
+            <option value="">
+              Seleccione
             </option>
 
-            <option
-              v-for="promo in promociones"
-              :key="promo.id"
-              :value="promo.id">
+            <option value="1">
+              Bebidas
+            </option>
 
-              {{ promo.nombre }}
+            <option value="2">
+              Postres
+            </option>
 
+            <option value="3">
+              Snacks
             </option>
           </select>
         </label>
 
-        <h3>Productos</h3>
-
-        <div
-          v-for="(detalle,index) in form.detalles"
-          :key="index"
-          class="detalle-card">
-
-          <select
-            v-model="detalle.productoId"
-            required>
-
-            <option value="">
-              Seleccione producto
-            </option>
-
-            <option
-              v-for="producto in productos"
-              :key="producto.id"
-              :value="producto.id">
-
-              {{ producto.nombre }}
-
-            </option>
-
-          </select>
-
-          <input
-            v-model.number="detalle.cantidad"
-            type="number"
-            min="1"
-            placeholder="Cantidad"
+        <label>
+          Descripción
+          <textarea
+            v-model="form.descripcion"
           />
+        </label>
 
-          <button
-            type="button"
-            class="delete-btn"
-            @click="eliminarDetalle(index)">
+        <label>
+          Precio
+          <input
+            v-model.number="form.precio"
+            type="number"
+            min="0.01"
+            required
+          />
+        </label>
 
-            X
+        <label>
+          Stock
+          <input
+            v-model.number="form.stock"
+            type="number"
+            min="0"
+            required
+          />
+        </label>
 
-          </button>
-
-        </div>
-
-        <button
-          type="button"
-          class="add-btn"
-          @click="agregarDetalle">
-
-          + Agregar Producto
-
-        </button>
+        <label>
+          Imagen URL
+          <input
+            v-model="form.imagenUrl"
+            type="text"
+          />
+        </label>
 
         <div class="buttons">
-
           <button
             type="submit"
-            class="save">
-
+            class="save"
+          >
             Guardar
-
           </button>
 
           <button
             type="button"
             class="cancel"
-            @click="$emit('close')">
-
+            @click="$emit('close')"
+          >
             Cancelar
-
           </button>
-
         </div>
 
       </form>
-
     </div>
   </div>
 </template>
 
 <script setup>
-import {
-  reactive,
-  watch
-}
-from 'vue'
+import { reactive, watch } from 'vue'
 
 const props = defineProps({
-  modelValue: Object,
-  productos: Array,
-  promociones: Array
+  modelValue: Object
 })
 
 const emit = defineEmits([
@@ -134,144 +110,100 @@ const emit = defineEmits([
 ])
 
 const form = reactive({
-  fechaPedido: '',
-  promocionId: null,
-  detalles: []
+  nombre: '',
+  descripcion: '',
+  precio: 0,
+  stock: 0,
+  categoriaId: '',
+  imagenUrl: ''
 })
 
 watch(
   () => props.modelValue,
   (value) => {
-
-    if(value){
-
-      form.fechaPedido =
-        value.fechaPedido?.substring(0,16)
-
-      form.promocionId =
-        value.promocionId
-
-      form.detalles =
-        value.detalles.map(d=>({
-
-          productoId:d.productoId,
-          cantidad:d.cantidad
-
-        }))
-
+    if (value) {
+      form.nombre = value.nombre
+      form.descripcion = value.descripcion
+      form.precio = value.precio
+      form.stock = value.stock
+      form.categoriaId = value.categoriaId
+      form.imagenUrl = value.imagenUrl
+    } else {
+      form.nombre = ''
+      form.descripcion = ''
+      form.precio = 0
+      form.stock = 0
+      form.categoriaId = ''
+      form.imagenUrl = ''
     }
-    else{
-
-      form.fechaPedido =
-        new Date()
-        .toISOString()
-        .substring(0,16)
-
-      form.promocionId = null
-
-      form.detalles = []
-
-    }
-
   },
-  {
-    immediate:true
-  }
+  { immediate: true }
 )
 
-function agregarDetalle(){
-
-  form.detalles.push({
-    productoId:'',
-    cantidad:1
+function guardar() {
+  emit('save', {
+    nombre: form.nombre,
+    descripcion: form.descripcion,
+    precio: form.precio,
+    stock: form.stock,
+    categoriaId: Number(form.categoriaId),
+    imagenUrl: form.imagenUrl
   })
-
-}
-
-function eliminarDetalle(index){
-
-  form.detalles.splice(index,1)
-
-}
-
-function guardar(){
-
-  emit('save',{
-
-    fechaPedido:
-      form.fechaPedido,
-
-    promocionId:
-      form.promocionId,
-
-    detalles:
-      form.detalles
-
-  })
-
 }
 </script>
 
 <style scoped>
-
-.modal-overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.5);
-  display:flex;
-  justify-content:center;
-  align-items:center;
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
 }
 
-.modal{
-  width:700px;
-  max-height:90vh;
-  overflow:auto;
-  background:white;
-  border-radius:20px;
-  padding:25px;
+.modal {
+  width: 500px;
+  max-width: 95%;
+  background: white;
+  padding: 25px;
+  border-radius: 20px;
 }
 
-.detalle-card{
-  display:flex;
-  gap:10px;
-  margin-bottom:10px;
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
-.buttons{
-  display:flex;
-  justify-content:flex-end;
-  gap:10px;
-  margin-top:20px;
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
 }
 
-.save{
-  background:#6d4c41;
-  color:white;
-  border:none;
-  padding:10px 20px;
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
-.cancel{
-  background:#999;
-  color:white;
-  border:none;
-  padding:10px 20px;
+.save {
+  background: #6d4c41;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
 }
 
-.add-btn{
-  background:#2e7d32;
-  color:white;
-  border:none;
-  padding:10px;
-  margin-top:10px;
+.cancel {
+  background: #9e9e9e;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
 }
-
-.delete-btn{
-  background:red;
-  color:white;
-  border:none;
-  padding:0 10px;
-}
-
 </style>
