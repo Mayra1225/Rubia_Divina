@@ -13,6 +13,16 @@ builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 
+builder.Services.AddScoped<PedidoService>();
+
+builder.Services.AddScoped<PromocionService>();
+
+builder.Services.AddScoped<DashboardService>();
+
+builder.Services.AddScoped<AnaliticaService>();
+
+builder.Services.AddScoped<HorarioPicoService>();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo

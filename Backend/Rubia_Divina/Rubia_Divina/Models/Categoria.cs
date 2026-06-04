@@ -9,5 +9,6 @@ public class Categoria
     public string Nombre { get; set; } = string.Empty;
 
     [JsonIgnore]
-    public ICollection<Producto> Productos { get; set; } = new List<Producto>();
+    public ICollection<Producto> Productos { get; set; }
+        = new List<Producto>();
 }

@@ -1,384 +1,503 @@
 <template>
   <div class="dashboard-page">
-    <header class="topbar">
+
+    <header class="dashboard-header">
+
       <div>
-        <span class="badge"> ☕ Rubia Divina Café </span>
-
-        <h1>Panel de Productos</h1>
-
-        <p>Bienvenido {{ user?.nombre }}</p>
+        <h1>☕ Rubia Divina Dashboard</h1>
+        <p>
+          Bienvenido {{ user?.nombre }}
+        </p>
       </div>
 
-      <div class="topbar-actions">
-        <button class="btn-add" @click="openCreateModal">+ Agregar Producto</button>
+      <button
+        class="logout-btn"
+        @click="logout">
 
-        <button class="btn-logout" @click="logout">Cerrar sesión</button>
-      </div>
+        Cerrar Sesión
+
+      </button>
+
     </header>
 
-    <p v-if="globalError" class="feedback error">
-      {{ globalError }}
-    </p>
+    <div class="dashboard-links">
 
-    <p v-if="successMessage" class="feedback success">
-      {{ successMessage }}
-    </p>
+      <RouterLink
+        to="/pedidos"
+        class="nav-card">
 
-    <div v-if="loading" class="loading">Cargando productos...</div>
+        📋 Pedidos
 
-    <div v-else class="products-grid">
-      <div v-for="producto in productos" :key="producto.id" class="product-card">
+      </RouterLink>
+
+      <RouterLink
+        to="/promociones"
+        class="nav-card">
+
+        🎁 Promociones
+
+      </RouterLink>
+
+    </div>
+
+    <div
+      v-if="dashboard"
+      class="stats-grid">
+
+      <div class="stat-card">
+
+        <h3>Total Ventas</h3>
+
+        <h2>
+          ${{ dashboard.totalVentas?.toFixed(2) || 0 }}
+        </h2>
+
+      </div>
+
+      <div class="stat-card">
+
+        <h3>Total Pedidos</h3>
+
+        <h2>
+          {{ dashboard.totalPedidos || 0 }}
+        </h2>
+
+      </div>
+
+      <div class="stat-card">
+
+        <h3>Producto Más Vendido</h3>
+
+        <h2>
+          {{
+            dashboard.productoMasVendido?.producto
+            || 'Sin datos'
+          }}
+        </h2>
+
+      </div>
+
+      <div class="stat-card">
+
+        <h3>Promoción Más Utilizada</h3>
+
+        <h2>
+          {{
+            dashboard.promoMasUsada?.promocion
+            || 'Sin datos'
+          }}
+        </h2>
+
+      </div>
+
+    </div>
+
+    <div
+      v-if="dashboard?.horarioPico"
+      class="peak-card">
+
+      <h2>🔥 Horario Pico</h2>
+
+      <p>
+
+        Día:
+        <strong>
+          {{ dashboard.horarioPico.diaSemana }}
+        </strong>
+
+      </p>
+
+      <p>
+
+        Pedidos:
+        <strong>
+          {{ dashboard.horarioPico.cantidadPedidos }}
+        </strong>
+
+      </p>
+
+    </div>
+
+    <div class="section-header">
+
+      <h2>Productos</h2>
+
+      <button
+        class="add-btn"
+        @click="showProductoModal = true">
+
+        + Nuevo Producto
+
+      </button>
+
+    </div>
+
+    <div class="products-grid">
+
+      <div
+        v-for="producto in productos"
+        :key="producto.id"
+        class="product-card">
+
         <img
-          :src="
-            producto.imagenUrl || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93'
-          "
-          class="product-image"
-        />
+          :src="producto.imagenUrl || defaultImage"
+          alt="producto">
 
-        <div class="product-body">
-          <div class="product-category">
-            {{ producto.categoria?.nombre }}
-          </div>
+        <h3>
+          {{ producto.nombre }}
+        </h3>
 
-          <h3>
-            {{ producto.nombre }}
-          </h3>
+        <p>
+          {{ producto.descripcion }}
+        </p>
 
-          <p class="description">
-            {{ producto.descripcion || 'Sin descripción' }}
-          </p>
+        <span class="price">
 
-          <div class="product-footer">
-            <span class="price"> ${{ Number(producto.precio).toFixed(2) }} </span>
+          ${{ producto.precio }}
 
-            <span class="stock">
-              Stock:
-              {{ producto.stock }}
-            </span>
-          </div>
+        </span>
 
-          <div class="actions">
-            <button class="edit-btn" @click="openEditModal(producto)">Editar</button>
+        <div class="actions">
 
-            <button class="delete-btn" @click="handleDelete(producto.id)">Eliminar</button>
-          </div>
+          <button
+            class="edit-btn"
+            @click="editarProducto(producto)">
+
+            Editar
+
+          </button>
+
+          <button
+            class="delete-btn"
+            @click="eliminarProducto(producto.id)">
+
+            Eliminar
+
+          </button>
+
         </div>
+
       </div>
+
     </div>
 
-    <!-- MODAL -->
+    <ProductoModal
+      v-if="showProductoModal"
+      :modelValue="productoSeleccionado"
+      @close="cerrarModal"
+      @save="guardarProducto" />
 
-    <div v-if="showModal" class="modal-overlay">
-      <div class="modal-content">
-        <ProductoForm :model-value="editingProduct" @save="handleSave" @cancel="closeModal" />
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
 
-import { useRouter } from 'vue-router'
-
-import ProductoForm from '../components/ProductoForm.vue'
+import { ref,onMounted } from 'vue'
+import { RouterLink,useRouter } from 'vue-router'
 
 import {
-  createProducto,
-  deleteProducto,
   getProductos,
+  createProducto,
   updateProducto,
-} from '../services/productoService'
+  deleteProducto
+}
+from '../services/productoService'
 
-import { clearSession, getUser } from '../services/storageService'
+import { getDashboard }
+from '../services/dashboardService'
+
+import {
+  getUser,
+  clearSession
+}
+from '../services/storageService'
+
+import ProductoModal
+from '../components/ProductoModal.vue'
 
 const router = useRouter()
 
 const user = ref(getUser())
 
+const dashboard = ref(null)
+
 const productos = ref([])
 
-const loading = ref(false)
+const showProductoModal = ref(false)
 
-const globalError = ref('')
+const productoSeleccionado = ref(null)
 
-const successMessage = ref('')
+const defaultImage =
+'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg'
 
-const editingProduct = ref(null)
+async function cargarDashboard(){
 
-const showModal = ref(false)
+  try{
 
-async function loadProductos() {
-  loading.value = true
+    const { data } =
+      await getDashboard()
 
-  try {
-    const { data } = await getProductos()
+    dashboard.value = data
+
+  }
+  catch(error){
+
+    console.log(error)
+
+  }
+
+}
+
+async function cargarProductos(){
+
+  try{
+
+    const { data } =
+      await getProductos()
 
     productos.value = data
-  } catch (err) {
-    globalError.value = err.response?.data?.message || 'No fue posible cargar productos.'
-  } finally {
-    loading.value = false
+
   }
-}
+  catch(error){
 
-function openCreateModal() {
-  editingProduct.value = null
-  showModal.value = true
-}
+    console.log(error)
 
-function openEditModal(producto) {
-  editingProduct.value = {
-    ...producto,
-    categoriaId: producto.categoriaId,
   }
 
-  showModal.value = true
 }
 
-function closeModal() {
-  showModal.value = false
-  editingProduct.value = null
+function editarProducto(producto){
+
+  productoSeleccionado.value = {
+    ...producto
+  }
+
+  showProductoModal.value = true
+
 }
 
-async function handleSave(payload) {
-  try {
-    if (editingProduct.value?.id) {
-      await updateProducto(editingProduct.value.id, payload)
+function cerrarModal(){
 
-      successMessage.value = 'Producto actualizado.'
-    } else {
+  productoSeleccionado.value = null
+
+  showProductoModal.value = false
+
+}
+
+async function guardarProducto(payload){
+
+  try{
+
+    if(productoSeleccionado.value){
+
+      await updateProducto(
+        productoSeleccionado.value.id,
+        payload
+      )
+
+    }
+    else{
+
       await createProducto(payload)
 
-      successMessage.value = 'Producto creado.'
     }
 
-    closeModal()
+    cerrarModal()
 
-    await loadProductos()
-  } catch (err) {
-    globalError.value = err.response?.data?.message || 'Error al guardar.'
+    await cargarProductos()
+
   }
+  catch(error){
+
+    console.log(error)
+
+  }
+
 }
 
-async function handleDelete(id) {
-  const confirmado = window.confirm('¿Eliminar producto?')
+async function eliminarProducto(id){
 
-  if (!confirmado) return
+  if(!confirm('¿Eliminar producto?'))
+    return
 
-  try {
+  try{
+
     await deleteProducto(id)
 
-    successMessage.value = 'Producto eliminado.'
+    await cargarProductos()
 
-    await loadProductos()
-  } catch (err) {
-    globalError.value = 'No se pudo eliminar.'
   }
+  catch(error){
+
+    console.log(error)
+
+  }
+
 }
 
-function logout() {
+function logout(){
+
   clearSession()
 
   router.push('/login')
+
 }
 
-onMounted(loadProductos)
+onMounted(async ()=>{
+
+  await cargarDashboard()
+
+  await cargarProductos()
+
+})
+
 </script>
 
 <style scoped>
-.dashboard-page {
-  min-height: 100vh;
-  background:
-    linear-gradient(rgba(20, 20, 20, 0.85), rgba(20, 20, 20, 0.92)),
-    url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085');
-  background-size: cover;
-  background-position: center;
-  padding: 40px;
-  color: white;
+
+.dashboard-page{
+  padding:30px;
+  background:#f6f1ea;
+  min-height:100vh;
 }
 
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
+.dashboard-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:30px;
 }
 
-.badge {
-  background: #c59d5f;
-  color: black;
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-weight: bold;
+.dashboard-header h1{
+  color:#5d4037;
 }
 
-.topbar h1 {
-  font-size: 42px;
-  margin-top: 15px;
+.logout-btn{
+  background:#8d6e63;
+  color:white;
+  border:none;
+  padding:10px 20px;
+  border-radius:10px;
+  cursor:pointer;
 }
 
-.topbar p {
-  color: #ddd;
+.dashboard-links{
+  display:flex;
+  gap:20px;
+  margin-bottom:30px;
 }
 
-.topbar-actions {
-  display: flex;
-  gap: 15px;
+.nav-card{
+  background:white;
+  padding:20px;
+  border-radius:15px;
+  text-decoration:none;
+  color:#5d4037;
+  font-weight:bold;
+  box-shadow:0 4px 10px rgba(0,0,0,.1);
 }
 
-.btn-add,
-.btn-logout {
-  border: none;
-  padding: 14px 22px;
-  border-radius: 14px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.3s;
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:20px;
+  margin-bottom:30px;
 }
 
-.btn-add {
-  background: #c59d5f;
-  color: black;
+.stat-card{
+  background:white;
+  padding:20px;
+  border-radius:15px;
+  text-align:center;
 }
 
-.btn-add:hover {
-  transform: scale(1.05);
+.stat-card h3{
+  color:#795548;
 }
 
-.btn-logout {
-  background: #8b1e1e;
-  color: white;
+.stat-card h2{
+  color:#3e2723;
 }
 
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 30px;
+.peak-card{
+  background:#fff3e0;
+  border-left:5px solid #ff9800;
+  padding:20px;
+  margin-bottom:30px;
+  border-radius:15px;
 }
 
-.product-card {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  border-radius: 24px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: 0.3s;
+.section-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
 }
 
-.product-card:hover {
-  transform: translateY(-6px);
+.add-btn{
+  background:#6d4c41;
+  color:white;
+  border:none;
+  padding:10px 20px;
+  border-radius:10px;
 }
 
-.product-image {
-  width: 100%;
-  height: 230px;
-  object-fit: cover;
+.products-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+  gap:20px;
 }
 
-.product-body {
-  padding: 24px;
+.product-card{
+  background:white;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 4px 12px rgba(0,0,0,.15);
 }
 
-.product-category {
-  display: inline-block;
-  background: #c59d5f;
-  color: black;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 13px;
-  margin-bottom: 15px;
-  font-weight: bold;
+.product-card img{
+  width:100%;
+  height:180px;
+  object-fit:cover;
 }
 
-.product-body h3 {
-  font-size: 26px;
-  margin-bottom: 12px;
+.product-card h3{
+  padding:10px;
+  color:#4e342e;
 }
 
-.description {
-  color: #ddd;
-  line-height: 1.5;
-  margin-bottom: 20px;
+.product-card p{
+  padding:0 10px;
+  color:#555;
 }
 
-.product-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
+.price{
+  display:block;
+  padding:10px;
+  font-weight:bold;
+  color:#2e7d32;
 }
 
-.price {
-  color: #ffd27d;
-  font-size: 24px;
-  font-weight: bold;
+.actions{
+  display:flex;
+  justify-content:space-around;
+  padding:15px;
 }
 
-.stock {
-  color: #eee;
+.edit-btn{
+  background:#ffb300;
+  border:none;
+  color:white;
+  padding:8px 16px;
+  border-radius:8px;
 }
 
-.actions {
-  display: flex;
-  gap: 12px;
+.delete-btn{
+  background:#e53935;
+  border:none;
+  color:white;
+  padding:8px 16px;
+  border-radius:8px;
 }
 
-.edit-btn,
-.delete-btn {
-  flex: 1;
-  border: none;
-  padding: 12px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.edit-btn {
-  background: #c59d5f;
-  color: black;
-}
-
-.delete-btn {
-  background: #8b1e1e;
-  color: white;
-}
-
-.feedback {
-  margin-bottom: 25px;
-  padding: 15px;
-  border-radius: 14px;
-}
-
-.error {
-  background: rgba(255, 0, 0, 0.15);
-  color: #ffbdbd;
-}
-
-.success {
-  background: rgba(0, 255, 100, 0.15);
-  color: #c9ffd8;
-}
-
-.loading {
-  text-align: center;
-  font-size: 24px;
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.modal-content {
-  width: 100%;
-  max-width: 600px;
-  background: #1f1f1f;
-  border-radius: 24px;
-  padding: 30px;
-}
 </style>

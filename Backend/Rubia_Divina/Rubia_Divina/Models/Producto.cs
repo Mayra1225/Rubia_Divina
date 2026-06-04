@@ -1,4 +1,5 @@
 namespace Rubia_Divina.Models;
+using System.Text.Json.Serialization;
 
 public class Producto
 {
@@ -12,7 +13,10 @@ public class Producto
 
     public int Stock { get; set; }
 
-    public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
+    public string ImagenUrl { get; set; } = string.Empty;
+
+    public DateTime FechaCreacion { get; set; }
+        = DateTime.Now;
 
     public int UsuarioId { get; set; }
 
@@ -22,5 +26,7 @@ public class Producto
 
     public Categoria? Categoria { get; set; }
 
-    public string ImagenUrl { get; set; } = string.Empty;
+    [JsonIgnore]
+    public ICollection<DetallePedido> Detalles { get; set; }
+    = new List<DetallePedido>();
 }
