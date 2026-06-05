@@ -70,38 +70,34 @@
       </p>
     </div>
 
-    <div v-if="dashboard?.productosMasVendidosPorDia?.length" class="analytics-card">
-      <h2> Producto Mas Vendido por Dia</h2>
-<pre>{{ productosMasVendidosPorDia }}</pre>
-        <table class="analytics-table">
+  <div v-if="productosMasVendidosDia.length" class="analytics-card">
+      <h2>📊 Producto Más Vendido por Día</h2>
 
-          <thead>
-            <tr>
-              <th>Día</th>
-              <th>Producto Más Vendido</th>
-              <th>Cantidad</th>
-            </tr>
-          </thead>
+      <table class="analytics-table">
+        <thead>
+          <tr>
+            <th>Día</th>
+            <th>Producto Más Vendido</th>
+            <th>Cantidad Vendida</th>
+            <th>Recomendación</th>
+          </tr>
+        </thead>
 
-          <tbody>
+        <tbody>
+          <tr
+            v-for="item in productosMasVendidosDia"
+            :key="item.diaSemana"
+          >
+            <td>{{ item.diaSemana }}</td>
 
-            <tr v-for="item in dashboard.productosMasVendidosPorDia" :key="item.dia">
-              <td>
-                {{ traducirDia(item.dia) }}
-              </td>
+            <td>{{ item.producto }}</td>
 
-              <td>
-                {{ item.producto }}
-              </td>
+            <td>{{ item.cantidadVendida }}</td>
 
-              <td>
-                {{ item.cantidad }}
-              </td>
-            </tr>
-
-          </tbody>
-
-        </table>
+            <td>{{ item.recomendacion }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div v-if="dashboard?.recomendacionPromocion" class="recomendation-card">
