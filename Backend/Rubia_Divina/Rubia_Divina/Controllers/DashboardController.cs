@@ -22,4 +22,13 @@ public class DashboardController : ControllerBase
             await _service.ObtenerResumenAsync()
         );
     }
+
+    [HttpGet("producto-mas-vendido-dia")]
+    public async Task<IActionResult>
+    GetProductoMasVendidoDia()
+    {
+        return Ok(
+            await _service.ObtenerProdcutoMasVendidoPorDia()
+        );
+    }
 }

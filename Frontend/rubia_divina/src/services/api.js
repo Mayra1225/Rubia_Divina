@@ -2,7 +2,7 @@ import axios from 'axios'
 import { getToken } from './storageService'
 
 const api = axios.create({
-  baseURL: 'https://rubia-divina.onrender.com/api',
+  baseURL: 'http://localhost:5055/api',
 })
 
 api.interceptors.request.use(

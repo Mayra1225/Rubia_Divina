@@ -70,6 +70,49 @@
       </p>
     </div>
 
+    <div v-if="dashboard?.productosMasVendidosPorDia?.length" class="analytics-card">
+      <h2> Producto Mas Vendido por Dia</h2>
+<pre>{{ productosMasVendidosPorDia }}</pre>
+        <table class="analytics-table">
+
+          <thead>
+            <tr>
+              <th>Día</th>
+              <th>Producto Más Vendido</th>
+              <th>Cantidad</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            <tr v-for="item in dashboard.productosMasVendidosPorDia" :key="item.dia">
+              <td>
+                {{ traducirDia(item.dia) }}
+              </td>
+
+              <td>
+                {{ item.producto }}
+              </td>
+
+              <td>
+                {{ item.cantidad }}
+              </td>
+            </tr>
+
+          </tbody>
+
+        </table>
+    </div>
+
+    <div v-if="dashboard?.recomendacionPromocion" class="recomendation-card">
+
+      <h2> Recomendacion de Promoción</h2>
+
+      <p>
+        {{ dashboard.recomendacionPromocion }}
+      </p>
+    </div>
+
     <div class="section-header">
       <h2>Productos</h2>
 
@@ -120,6 +163,9 @@ import {
 
 import { getDashboard } from '../services/dashboardService'
 
+import { getProductosMasVendidosDia } from '../services/dashboardService'
+
+
 import { getHorariosPico } from '../services/horarioPicoService'
 
 import { getUser, clearSession } from '../services/storageService'
@@ -131,6 +177,8 @@ const router = useRouter()
 const user = ref(getUser())
 
 const dashboard = ref(null)
+
+const productosMasVendidosDia = ref([])
 
 const horarioPico = ref(null)
 
@@ -150,6 +198,14 @@ async function cargarDashboard() {
   } catch (error) {
     console.log(error)
   }
+}
+
+async function cargarProductosMasVendidosDia() {
+ const { data } = await getProductosMasVendidosDia()
+
+ productosMasVendidosDia.value = data
+
+ console.log(data)
 }
 
 async function cargarHorarioPico() {
@@ -240,6 +296,8 @@ onMounted(async () => {
   await cargarHorarioPico()
 
   await cargarProductos()
+
+  await cargarProductosMasVendidosDia()
 })
 </script>
 
@@ -382,4 +440,58 @@ onMounted(async () => {
   padding: 8px 16px;
   border-radius: 8px;
 }
+
+.analytics-card {
+  background: white;
+  margin-bottom: 30px;
+  padding: 25px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+}
+
+.analytics-card h2{
+  color: #5d4037;
+  margin-bottom: 20px;
+}
+
+.analytics-table{
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.analytics-table th {
+  background: #6d4c41;
+  color: white;
+  padding: 12px;
+}
+
+.analytics-table td {
+  padding: 12px;
+  border-bottom: 1ox solid #eee;
+}
+
+.analytics-table tr:hover {
+  background: #f8f4ef;
+}
+
+.recomendation-card {
+  background: #e8f5e9;
+  border-left: 6px solid #43a047;
+  border-radius: 20px;
+  padding: 25px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 12px rgbd(0,0,0,.12);
+}
+
+.recomendation-card h2 {
+  color: #2e7d32;
+  margin-bold: 10px;
+}
+
+.recomendation-card p {
+  color: #1b5e20;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
 </style>

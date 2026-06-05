@@ -117,6 +117,7 @@ public static class DbSeeder
                     UsuarioId = admin.Id,
                     CategoriaId = postres.Id,
                     ImagenUrl = "https://images.pexels.com/photos/4597835/pexels-photo-4597835.jpeg"
+
                 }
 
             );
