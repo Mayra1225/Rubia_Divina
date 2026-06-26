@@ -2,17 +2,21 @@ using Microsoft.EntityFrameworkCore;
 using Rubia_Divina.Data;
 using Rubia_Divina.DTOs;
 using Rubia_Divina.Helpers;
+using Rubia_Divina.Interfaces.Services;
 using Rubia_Divina.Models;
 
 namespace Rubia_Divina.Services;
 
-public class AuthService
+public class AuthService : IAuthService
 {
     private readonly AppDbContext _context;
     private readonly JwtHelper _jwtHelper;
     private readonly PasswordHelper _passwordHelper;
 
-    public AuthService(AppDbContext context, JwtHelper jwtHelper, PasswordHelper passwordHelper)
+    public AuthService(
+        AppDbContext context,
+        JwtHelper jwtHelper,
+        PasswordHelper passwordHelper)
     {
         _context = context;
         _jwtHelper = jwtHelper;
@@ -21,7 +25,8 @@ public class AuthService
 
     public async Task<AuthResponse> LoginAsync(LoginDTO dto)
     {
-        var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == dto.Email.Trim().ToLower());
+        var user = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Email == dto.Email.Trim().ToLower());
 
         if (user is null || !_passwordHelper.VerifyPassword(dto.Password, user.PasswordHash))
         {
@@ -46,42 +51,14 @@ public class AuthService
     {
         var email = dto.Email.Trim().ToLower();
 
-        var exists = await _context.Usuarios
-            .AnyAsync(u => u.Email == email);
+        var exists = await _context.Usuarios.AnyAsync(u => u.Email == email);
 
         if (exists)
         {
             return new AuthResponse
             {
                 Success = false,
-                Message = "Ya existe un usuario registrado con ese correo."
-            };
-        }
-
-        if (dto.Password.Length < 8)
-        {
-            return new AuthResponse
-            {
-                Success = false,
-                Message = "La contraseña debe tener mínimo 8 caracteres."
-            };
-        }
-
-        if (!dto.Password.Any(char.IsUpper))
-        {
-            return new AuthResponse
-            {
-                Success = false,
-                Message = "La contraseña debe tener al menos una mayúscula."
-            };
-        }
-
-        if (!dto.Password.Any(char.IsDigit))
-        {
-            return new AuthResponse
-            {
-                Success = false,
-                Message = "La contraseña debe tener al menos un número."
+                Message = "Ya existe un usuario con ese correo."
             };
         }
 
@@ -93,7 +70,6 @@ public class AuthService
         };
 
         _context.Usuarios.Add(user);
-
         await _context.SaveChangesAsync();
 
         return new AuthResponse

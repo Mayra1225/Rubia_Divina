@@ -1,144 +1,124 @@
-using Microsoft.EntityFrameworkCore;
-using Rubia_Divina.Data;
 using Rubia_Divina.DTOs;
+using Rubia_Divina.FactoryMethods;
+using Rubia_Divina.Interfaces.Repositories;
+using Rubia_Divina.Interfaces.Services;
 using Rubia_Divina.Models;
 
 namespace Rubia_Divina.Services;
 
-public class ProductoService
+public class ProductoService : IProductoService
 {
-    private readonly AppDbContext _context;
+    private readonly IProductoRepository _repository;
+    private readonly IProductoFactory _factory;
 
     public ProductoService(
-        AppDbContext context
-    )
+        IProductoRepository repository,
+        IProductoFactory factory)
     {
-        _context = context;
+        _repository = repository;
+        _factory = factory;
     }
 
     public async Task<List<Producto>> ObtenerPorUsuarioAsync(
-        int usuarioId
-    )
+        int usuarioId)
     {
-        return await _context.Productos
-            .Include(p => p.Categoria)
-            .Where(p => p.UsuarioId == usuarioId)
-            .OrderByDescending(p => p.FechaCreacion)
-            .ToListAsync();
+        return await _repository
+            .ObtenerPorUsuarioAsync(usuarioId);
     }
 
     public async Task<Producto?> ObtenerUnoAsync(
         int id,
-        int usuarioId
-    )
+        int usuarioId)
     {
-        return await _context.Productos
-            .Include(p => p.Categoria)
-            .FirstOrDefaultAsync(
-                p =>
-                    p.Id == id &&
-                    p.UsuarioId == usuarioId
-            );
+        return await _repository
+            .ObtenerUnoAsync(id, usuarioId);
     }
 
     public async Task<Producto> CrearAsync(
         ProductoDTO dto,
-        int usuarioId
-    )
+        int usuarioId)
     {
-        var categoria = await _context.Categorias
-            .FindAsync(dto.CategoriaId);
+        var categoria =
+            await _repository.ObtenerCategoriaAsync(dto.CategoriaId);
 
         if (categoria == null)
         {
             throw new Exception(
-                "La categoría no existe."
-            );
+                "La categoría no existe.");
         }
 
-        var producto = new Producto
-        {
-            Nombre = dto.Nombre.Trim(),
-            Descripcion = dto.Descripcion.Trim(),
-            Precio = dto.Precio,
-            Stock = dto.Stock,
-            UsuarioId = usuarioId,
-            CategoriaId = dto.CategoriaId,
-            ImagenUrl = dto.ImagenUrl
-        };
+        var producto =
+            _factory.Crear(dto, usuarioId);
 
-        _context.Productos.Add(producto);
+        await _repository.AgregarAsync(producto);
 
-        await _context.SaveChangesAsync();
+        await _repository.GuardarCambiosAsync();
 
-        return await ObtenerUnoAsync(
+        return await _repository.ObtenerUnoAsync(
             producto.Id,
-            usuarioId
-        ) ?? producto;
+            usuarioId) ?? producto;
     }
 
     public async Task<Producto?> ActualizarAsync(
         int id,
         ProductoDTO dto,
-        int usuarioId
-    )
+        int usuarioId)
     {
-        var producto = await ObtenerUnoAsync(
-            id,
-            usuarioId
-        );
+        var producto =
+            await _repository.ObtenerUnoAsync(
+                id,
+                usuarioId);
 
         if (producto == null)
-        {
             return null;
-        }
 
-        var categoria = await _context.Categorias
-            .FindAsync(dto.CategoriaId);
+        var categoria =
+            await _repository.ObtenerCategoriaAsync(
+                dto.CategoriaId);
 
         if (categoria == null)
         {
             throw new Exception(
-                "La categoría no existe."
-            );
+                "La categoría no existe.");
         }
 
         producto.Nombre = dto.Nombre.Trim();
+
         producto.Descripcion =
             dto.Descripcion.Trim();
+
         producto.Precio = dto.Precio;
+
         producto.Stock = dto.Stock;
+
         producto.CategoriaId =
             dto.CategoriaId;
+
         producto.ImagenUrl =
             dto.ImagenUrl;
 
-        await _context.SaveChangesAsync();
+        await _repository.GuardarCambiosAsync();
 
-        return await ObtenerUnoAsync(
+        return await _repository.ObtenerUnoAsync(
             producto.Id,
-            usuarioId
-        );
+            usuarioId);
     }
 
     public async Task<bool> EliminarAsync(
         int id,
-        int usuarioId
-    )
+        int usuarioId)
     {
-        var producto = await ObtenerUnoAsync(
-            id,
-            usuarioId
-        );
+        var producto =
+            await _repository.ObtenerUnoAsync(
+                id,
+                usuarioId);
 
         if (producto == null)
-        {
             return false;
-        }
 
-        _context.Productos.Remove(producto);
+        await _repository.EliminarAsync(producto);
 
-        await _context.SaveChangesAsync();
+        await _repository.GuardarCambiosAsync();
 
         return true;
     }

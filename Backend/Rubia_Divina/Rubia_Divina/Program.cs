@@ -3,7 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Rubia_Divina.Data;
+using Rubia_Divina.FactoryMethods;
 using Rubia_Divina.Helpers;
+using Rubia_Divina.Interfaces.Repositories;
+using Rubia_Divina.Interfaces.Services;
+using Rubia_Divina.Repositories;
 using Rubia_Divina.Services;
 using System.Text;
 
@@ -13,15 +17,18 @@ builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddScoped<PedidoService>();
+builder.Services.AddScoped<IProductoRepository, ProductoRepository>();
+builder.Services.AddScoped<IPedidoRepository, PedidoRepository>();
+builder.Services.AddScoped<IHorarioPicoRepository, HorarioPicoRepository>();
 
-builder.Services.AddScoped<PromocionService>();
+builder.Services.AddScoped<IProductoFactory, ProductoFactory>();
+builder.Services.AddScoped<IPedidoFactory, PedidoFactory>();
 
-builder.Services.AddScoped<DashboardService>();
-
-builder.Services.AddScoped<AnaliticaService>();
-
-builder.Services.AddScoped<HorarioPicoService>();
+builder.Services.AddScoped<IProductoService, ProductoService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IAnaliticaService, AnaliticaService>();
+builder.Services.AddScoped<IHorarioPicoService, HorarioPicoService>();
+builder.Services.AddScoped<IPromocionService, PromocionService>();
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -61,10 +68,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<JwtHelper>();
-builder.Services.AddScoped<PasswordHelper>();
-builder.Services.AddScoped<ProductoService>();
+builder.Services.AddScoped<IPedidoService, PedidoService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddSingleton<JwtHelper>();
+builder.Services.AddSingleton<PasswordHelper>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -113,14 +120,18 @@ using (var scope = app.Services.CreateScope())
     DbSeeder.Seed(db, scope.ServiceProvider);
 }
 
-app.UseSwagger();
 
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseCors("FrontendPolicy");
 
-app.UseAuthentication();
+app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

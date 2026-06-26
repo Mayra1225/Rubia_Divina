@@ -1,17 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Rubia_Divina.Services;
+using Rubia_Divina.Interfaces.Services;
 
 namespace Rubia_Divina.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class HorariosPicoController
-    : ControllerBase
+public class HorariosPicoController : ControllerBase
 {
-    private readonly HorarioPicoService _service;
+    private readonly IHorarioPicoService _service;
 
-    public HorariosPicoController(
-        HorarioPicoService service)
+    public HorariosPicoController(IHorarioPicoService service)
     {
         _service = service;
     }
@@ -20,11 +18,7 @@ public class HorariosPicoController
     public async Task<IActionResult> Get()
     {
         await _service.ActualizarTablaAsync();
-
-        var datos =
-            await _service.ObtenerAsync();
-
-        return Ok(datos);
+        return Ok(await _service.ObtenerAsync());
     }
 
     [HttpPost("actualizar")]
@@ -34,17 +28,13 @@ public class HorariosPicoController
 
         return Ok(new
         {
-            mensaje =
-                "Horarios pico recalculados."
+            mensaje = "Horarios pico recalculados."
         });
     }
 
     [HttpGet("analisis")]
     public async Task<IActionResult> Analisis()
     {
-        return Ok(
-            await _service
-            .GenerarHorariosPicoAsync()
-        );
+        return Ok(await _service.GenerarHorariosPicoAsync());
     }
 }

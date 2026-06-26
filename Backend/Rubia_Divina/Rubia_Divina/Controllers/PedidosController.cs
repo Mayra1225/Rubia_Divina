@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Rubia_Divina.DTOs;
-using Rubia_Divina.Services;
+using Rubia_Divina.Interfaces.Services;
 
 namespace Rubia_Divina.Controllers;
 
@@ -8,9 +8,9 @@ namespace Rubia_Divina.Controllers;
 [Route("api/[controller]")]
 public class PedidosController : ControllerBase
 {
-    private readonly PedidoService _service;
+    private readonly IPedidoService _service;
 
-    public PedidosController(PedidoService service)
+    public PedidosController(IPedidoService service)
     {
         _service = service;
     }
@@ -26,10 +26,9 @@ public class PedidosController : ControllerBase
     {
         var pedido = await _service.ObtenerUnoAsync(id);
 
-        if (pedido == null)
-            return NotFound();
-
-        return Ok(pedido);
+        return pedido == null
+            ? NotFound()
+            : Ok(pedido);
     }
 
     [HttpPost]
@@ -39,28 +38,20 @@ public class PedidosController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Put(
-        int id,
-        PedidoDTO dto)
+    public async Task<IActionResult> Put(int id, PedidoDTO dto)
     {
-        var pedido =
-            await _service.ActualizarAsync(id, dto);
+        var pedido = await _service.ActualizarAsync(id, dto);
 
-        if (pedido == null)
-            return NotFound();
-
-        return Ok(pedido);
+        return pedido == null
+            ? NotFound()
+            : Ok(pedido);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var eliminado =
-            await _service.EliminarAsync(id);
+        var eliminado = await _service.EliminarAsync(id);
 
-        if (!eliminado)
-            return NotFound();
-
-        return Ok();
+        return eliminado ? Ok() : NotFound();
     }
 }

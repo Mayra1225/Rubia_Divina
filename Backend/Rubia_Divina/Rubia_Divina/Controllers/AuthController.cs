@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Rubia_Divina.DTOs;
-using Rubia_Divina.Services;
+using Rubia_Divina.Interfaces.Services;
 
 namespace Rubia_Divina.Controllers;
 
@@ -8,44 +8,36 @@ namespace Rubia_Divina.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
 
-    public AuthController(AuthService authService)
+    public AuthController(IAuthService authService)
     {
         _authService = authService;
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDTO dto)
+    public async Task<IActionResult> Login(LoginDTO dto)
     {
         if (!ModelState.IsValid)
-        {
             return BadRequest(ModelState);
-        }
 
         var result = await _authService.LoginAsync(dto);
-        if (!result.Success)
-        {
-            return Unauthorized(result);
-        }
 
-        return Ok(result);
+        return result.Success
+            ? Ok(result)
+            : Unauthorized(result);
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
+    public async Task<IActionResult> Register(RegisterDTO dto)
     {
         if (!ModelState.IsValid)
-        {
             return BadRequest(ModelState);
-        }
 
         var result = await _authService.RegisterAsync(dto);
-        if (!result.Success)
-        {
-            return BadRequest(result);
-        }
 
-        return Ok(result);
+        return result.Success
+            ? Ok(result)
+            : BadRequest(result);
     }
 }

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Rubia_Divina.DTOs;
-using Rubia_Divina.Services;
+using Rubia_Divina.Interfaces.Services;
 using System.Security.Claims;
 
 namespace Rubia_Divina.Controllers;
@@ -11,9 +11,9 @@ namespace Rubia_Divina.Controllers;
 [Route("api/[controller]")]
 public class ProductosController : ControllerBase
 {
-    private readonly ProductoService _productoService;
+    private readonly IProductoService _productoService;
 
-    public ProductosController(ProductoService productoService)
+    public ProductosController(IProductoService productoService)
     {
         _productoService = productoService;
     }
@@ -23,9 +23,8 @@ public class ProductosController : ControllerBase
         var claim = User.FindFirst("uid")?.Value;
 
         if (string.IsNullOrWhiteSpace(claim))
-        {
-            throw new UnauthorizedAccessException("No se encontró el identificador del usuario en el token.");
-        }
+            throw new UnauthorizedAccessException(
+                "No se encontró el usuario en el token.");
 
         return int.Parse(claim);
     }
@@ -33,16 +32,23 @@ public class ProductosController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var productos = await _productoService.ObtenerPorUsuarioAsync(ObtenerUsuarioId());
+        var productos =
+            await _productoService.ObtenerPorUsuarioAsync(
+                ObtenerUsuarioId());
+
         return Ok(productos);
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var producto = await _productoService.ObtenerUnoAsync(id, ObtenerUsuarioId());
+        var producto =
+            await _productoService.ObtenerUnoAsync(
+                id,
+                ObtenerUsuarioId());
+
         return producto is null
-            ? NotFound(new { message = "Producto no encontrado." })
+            ? NotFound()
             : Ok(producto);
     }
 
@@ -50,34 +56,46 @@ public class ProductosController : ControllerBase
     public async Task<IActionResult> Post([FromBody] ProductoDTO dto)
     {
         if (!ModelState.IsValid)
-        {
             return BadRequest(ModelState);
-        }
 
-        var producto = await _productoService.CrearAsync(dto, ObtenerUsuarioId());
-        return CreatedAtAction(nameof(GetById), new { id = producto.Id }, producto);
+        var producto =
+            await _productoService.CrearAsync(
+                dto,
+                ObtenerUsuarioId());
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = producto.Id },
+            producto);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Put(int id, [FromBody] ProductoDTO dto)
+    public async Task<IActionResult> Put(int id, ProductoDTO dto)
     {
         if (!ModelState.IsValid)
-        {
             return BadRequest(ModelState);
-        }
 
-        var producto = await _productoService.ActualizarAsync(id, dto, ObtenerUsuarioId());
+        var producto =
+            await _productoService.ActualizarAsync(
+                id,
+                dto,
+                ObtenerUsuarioId());
+
         return producto is null
-            ? NotFound(new { message = "Producto no encontrado." })
+            ? NotFound()
             : Ok(producto);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var eliminado = await _productoService.EliminarAsync(id, ObtenerUsuarioId());
-        return !eliminado
-            ? NotFound(new { message = "Producto no encontrado." })
-            : Ok(new { message = "Producto eliminado correctamente." });
+        var eliminado =
+            await _productoService.EliminarAsync(
+                id,
+                ObtenerUsuarioId());
+
+        return eliminado
+            ? Ok(new { message = "Eliminado correctamente" })
+            : NotFound();
     }
 }

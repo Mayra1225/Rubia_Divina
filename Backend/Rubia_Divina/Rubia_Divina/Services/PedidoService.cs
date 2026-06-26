@@ -1,37 +1,39 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Rubia_Divina.Data;
-using Rubia_Divina.DTOs;
+﻿using Rubia_Divina.DTOs;
+using Rubia_Divina.FactoryMethods;
+using Rubia_Divina.Interfaces.Repositories;
+using Rubia_Divina.Interfaces.Services;
 using Rubia_Divina.Models;
 
 namespace Rubia_Divina.Services;
 
-public class PedidoService
+public class PedidoService : IPedidoService
 {
-    private readonly AppDbContext _context;
+    private readonly IPedidoRepository _repository;
+    private readonly IPedidoFactory _factory;
+    private readonly IHorarioPicoService _horarioService;
 
-    public PedidoService(AppDbContext context)
+    public PedidoService(
+        IPedidoRepository repository,
+        IPedidoFactory factory,
+        IHorarioPicoService horarioService)
     {
-        _context = context;
+        _repository = repository;
+        _factory = factory;
+        _horarioService = horarioService;
     }
+
 
     public async Task<List<Pedido>> ObtenerTodosAsync()
     {
-        return await _context.Pedidos
-            .Include(x => x.Detalles)
-            .ThenInclude(x => x.Producto)
-            .Include(x => x.Promocion)
-            .OrderByDescending(x => x.FechaPedido)
-            .ToListAsync();
+        return await _repository.ObtenerTodosAsync();
     }
+
 
     public async Task<Pedido?> ObtenerUnoAsync(int id)
     {
-        return await _context.Pedidos
-            .Include(x => x.Detalles)
-            .ThenInclude(x => x.Producto)
-            .Include(x => x.Promocion)
-            .FirstOrDefaultAsync(x => x.Id == id);
+        return await _repository.ObtenerUnoAsync(id);
     }
+
 
     public async Task<Pedido> CrearAsync(PedidoDTO dto)
     {
@@ -41,8 +43,8 @@ public class PedidoService
 
         foreach (var item in dto.Detalles)
         {
-            var producto = await _context.Productos
-                .FirstOrDefaultAsync(x => x.Id == item.ProductoId);
+            var producto =
+                await _repository.ObtenerProductoAsync(item.ProductoId);
 
             if (producto == null)
                 throw new Exception("Producto no encontrado");
@@ -69,10 +71,7 @@ public class PedidoService
 
         if (dto.PromocionId.HasValue)
         {
-            promo = await _context.Promociones
-                .FirstOrDefaultAsync(x =>
-                    x.Id == dto.PromocionId &&
-                    x.Activa);
+            promo = await _repository.ObtenerPromocionAsync(dto.PromocionId.Value);
 
             if (promo != null)
             {
@@ -80,120 +79,69 @@ public class PedidoService
             }
         }
 
-        var pedido = new Pedido
-        {
-            FechaPedido = DateTime.Now,
-            PromocionId = promo?.Id,
-            Total = total,
-            Detalles = detalles
-        };
 
-        _context.Pedidos.Add(pedido);
+        var pedido = _factory.Crear(
+            total,
+            promo?.Id,
+            detalles
+        );
 
-        await _context.SaveChangesAsync();
+        await _repository.AgregarPedidoAsync(pedido);
+
+        await _repository.GuardarCambiosAsync();
 
         await RegistrarHorarioPico();
 
         return pedido;
     }
 
-    private async Task RegistrarHorarioPico()
-    {
-        var ahora = DateTime.Now;
-
-        string dia = ahora.DayOfWeek.ToString();
-
-        var registro =
-            await _context.HorariosPico
-            .FirstOrDefaultAsync(x =>
-                x.DiaSemana == dia &&
-                x.Hora == ahora.Hour);
-
-        if (registro == null)
-        {
-            registro = new HorarioPico
-            {
-                DiaSemana = dia,
-                Hora = ahora.Hour,
-                CantidadPedidos = 1,
-                EsHorarioPico = false
-            };
-
-            _context.HorariosPico.Add(registro);
-        }
-        else
-        {
-            registro.CantidadPedidos++;
-        }
-
-        registro.EsHorarioPico =
-            registro.CantidadPedidos >= 3;
-
-        await _context.SaveChangesAsync();
-    }
 
     public async Task<Pedido?> ActualizarAsync(
-    int id,
-    PedidoDTO dto)
+        int id,
+        PedidoDTO dto)
     {
         var pedido =
-            await _context.Pedidos
-            .Include(x => x.Detalles)
-            .FirstOrDefaultAsync(x => x.Id == id);
+            await _repository.ObtenerUnoAsync(id);
 
         if (pedido == null)
             return null;
 
-        _context.DetallePedidos.RemoveRange(
-            pedido.Detalles
-        );
+        await _repository.EliminarDetallesAsync(pedido.Detalles);
 
         decimal total = 0;
 
-        var nuevosDetalles =
-            new List<DetallePedido>();
+        var nuevosDetalles = new List<DetallePedido>();
 
         foreach (var item in dto.Detalles)
         {
             var producto =
-                await _context.Productos
-                .FirstOrDefaultAsync(x =>
-                    x.Id == item.ProductoId);
+                await _repository.ObtenerProductoAsync(item.ProductoId);
 
             if (producto == null)
-                throw new Exception(
-                    "Producto no encontrado"
-                );
+                throw new Exception("Producto no encontrado");
 
-            var subtotal =
-                producto.Precio * item.Cantidad;
+            var subtotal = producto.Precio * item.Cantidad;
 
             total += subtotal;
 
-            nuevosDetalles.Add(
-                new DetallePedido
-                {
-                    ProductoId = producto.Id,
-                    Cantidad = item.Cantidad,
-                    PrecioUnitario = producto.Precio,
-                    Subtotal = subtotal
-                });
+            nuevosDetalles.Add(new DetallePedido
+            {
+                ProductoId = producto.Id,
+                Cantidad = item.Cantidad,
+                PrecioUnitario = producto.Precio,
+                Subtotal = subtotal
+            });
         }
 
         Promocion? promo = null;
 
         if (dto.PromocionId.HasValue)
         {
-            promo =
-                await _context.Promociones
-                .FirstOrDefaultAsync(x =>
-                    x.Id == dto.PromocionId &&
-                    x.Activa);
+            promo = await _repository.ObtenerPromocionAsync(dto.PromocionId.Value);
 
             if (promo != null)
             {
-                total -= total *
-                    (promo.Descuento / 100);
+                total -= total * (promo.Descuento / 100);
             }
         }
 
@@ -201,7 +149,7 @@ public class PedidoService
         pedido.PromocionId = promo?.Id;
         pedido.Detalles = nuevosDetalles;
 
-        await _context.SaveChangesAsync();
+        await _repository.GuardarCambiosAsync();
 
         return pedido;
     }
@@ -209,21 +157,21 @@ public class PedidoService
     public async Task<bool> EliminarAsync(int id)
     {
         var pedido =
-            await _context.Pedidos
-            .Include(x => x.Detalles)
-            .FirstOrDefaultAsync(x => x.Id == id);
+            await _repository.ObtenerUnoAsync(id);
 
         if (pedido == null)
             return false;
 
-        _context.DetallePedidos.RemoveRange(
-            pedido.Detalles
-        );
+        await _repository.EliminarDetallesAsync(pedido.Detalles);
+        await _repository.EliminarPedidoAsync(pedido);
 
-        _context.Pedidos.Remove(pedido);
-
-        await _context.SaveChangesAsync();
+        await _repository.GuardarCambiosAsync();
 
         return true;
+    }
+
+    private async Task RegistrarHorarioPico()
+    {
+        await _horarioService.ActualizarTablaAsync();
     }
 }

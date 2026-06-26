@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Rubia_Divina.Services;
+using Rubia_Divina.Interfaces.Services;
 
 namespace Rubia_Divina.Controllers;
 
@@ -7,10 +7,9 @@ namespace Rubia_Divina.Controllers;
 [Route("api/[controller]")]
 public class AnaliticaController : ControllerBase
 {
-    private readonly AnaliticaService _service;
+    private readonly IAnaliticaService _service;
 
-    public AnaliticaController(
-        AnaliticaService service)
+    public AnaliticaController(IAnaliticaService service)
     {
         _service = service;
     }
@@ -18,8 +17,6 @@ public class AnaliticaController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        return Ok(
-            await _service.ObtenerAnalisisAsync()
-        );
+        return Ok(await _service.ObtenerAnalisisAsync());
     }
 }
