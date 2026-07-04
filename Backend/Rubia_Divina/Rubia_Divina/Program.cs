@@ -120,12 +120,8 @@ using (var scope = app.Services.CreateScope())
     DbSeeder.Seed(db, scope.ServiceProvider);
 }
 
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("FrontendPolicy");
 
