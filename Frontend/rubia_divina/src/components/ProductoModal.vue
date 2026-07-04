@@ -6,92 +6,49 @@
       </h2>
 
       <form @submit.prevent="guardar">
-
         <label>
           Nombre
-          <input
-            v-model="form.nombre"
-            type="text"
-            required
-          />
+          <input v-model="form.nombre" type="text" required />
         </label>
 
         <label>
           Categoría
-          <select
-            v-model="form.categoriaId"
-            required
-          >
-            <option value="">
-              Seleccione
-            </option>
+          <select v-model="form.categoriaId" required>
+            <option value="">Seleccione</option>
 
-            <option value="1">
-              Bebidas
-            </option>
+            <option value="1">Bebidas</option>
 
-            <option value="2">
-              Postres
-            </option>
+            <option value="2">Postres</option>
 
-            <option value="3">
-              Snacks
-            </option>
+            <option value="3">Snacks</option>
           </select>
         </label>
 
         <label>
           Descripción
-          <textarea
-            v-model="form.descripcion"
-          />
+          <textarea v-model="form.descripcion" />
         </label>
 
         <label>
           Precio
-          <input
-            v-model.number="form.precio"
-            type="number"
-            min="0.01"
-            required
-          />
+          <input v-model.number="form.precio" type="number" min="0.01" step="0.01" required />
         </label>
 
         <label>
           Stock
-          <input
-            v-model.number="form.stock"
-            type="number"
-            min="0"
-            required
-          />
+          <input v-model.number="form.stock" type="number" min="0" required />
         </label>
 
         <label>
           Imagen URL
-          <input
-            v-model="form.imagenUrl"
-            type="text"
-          />
+          <input v-model="form.imagenUrl" type="text" />
         </label>
 
         <div class="buttons">
-          <button
-            type="submit"
-            class="save"
-          >
-            Guardar
-          </button>
+          <button type="submit" class="save">Guardar</button>
 
-          <button
-            type="button"
-            class="cancel"
-            @click="$emit('close')"
-          >
-            Cancelar
-          </button>
+          <button type="button" class="cancel" @click="$emit('close')">Cancelar</button>
         </div>
-
       </form>
     </div>
   </div>
@@ -101,13 +58,10 @@
 import { reactive, watch } from 'vue'
 
 const props = defineProps({
-  modelValue: Object
+  modelValue: Object,
 })
 
-const emit = defineEmits([
-  'save',
-  'close'
-])
+const emit = defineEmits(['save', 'close'])
 
 const form = reactive({
   nombre: '',
@@ -115,7 +69,7 @@ const form = reactive({
   precio: 0,
   stock: 0,
   categoriaId: '',
-  imagenUrl: ''
+  imagenUrl: '',
 })
 
 watch(
@@ -137,7 +91,7 @@ watch(
       form.imagenUrl = ''
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 function guardar() {
@@ -147,7 +101,7 @@ function guardar() {
     precio: form.precio,
     stock: form.stock,
     categoriaId: Number(form.categoriaId),
-    imagenUrl: form.imagenUrl
+    imagenUrl: form.imagenUrl,
   })
 }
 </script>
@@ -156,7 +110,7 @@ function guardar() {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
