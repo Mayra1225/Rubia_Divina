@@ -54,4 +54,17 @@ public class ProductoRepository : IProductoRepository
 
         return Task.CompletedTask;
     }
+
+    public async Task<List<Producto>> ObtenerPorCategoriaAsync(
+    int categoriaId,
+    int usuarioId)
+    {
+        return await _context.Productos
+            .Include(p => p.Categoria)
+            .Where(p =>
+                p.CategoriaId == categoriaId &&
+                p.UsuarioId == usuarioId)
+            .OrderBy(p => p.Nombre)
+            .ToListAsync();
+    }
 }

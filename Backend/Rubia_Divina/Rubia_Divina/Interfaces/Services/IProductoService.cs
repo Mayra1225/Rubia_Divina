@@ -21,4 +21,8 @@ public interface IProductoService
     Task<bool> EliminarAsync(
         int id,
         int usuarioId);
+
+    Task<List<Producto>> ObtenerPorCategoriaAsync(
+    int categoriaId,
+    int usuarioId);
 }

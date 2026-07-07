@@ -15,4 +15,8 @@ public interface IProductoRepository
     Task EliminarAsync(Producto producto);
 
     Task<Categoria?> ObtenerCategoriaAsync(int categoriaId);
+
+    Task<List<Producto>> ObtenerPorCategoriaAsync(
+    int categoriaId,
+    int usuarioId);
 }

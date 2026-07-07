@@ -1,7 +1,7 @@
 using Rubia_Divina.DTOs;
 using Rubia_Divina.FactoryMethods;
-using Rubia_Divina.Interfaces;
 using Rubia_Divina.Interfaces.Repositories;
+using Rubia_Divina.Interfaces.Services;
 using Rubia_Divina.Models;
 
 namespace Rubia_Divina.Services;
@@ -121,5 +121,14 @@ public class ProductoService : IProductoService
         await _repository.GuardarCambiosAsync();
 
         return true;
+    }
+
+    public async Task<List<Producto>> ObtenerPorCategoriaAsync(
+    int categoriaId,
+    int usuarioId)
+    {
+        return await _repository.ObtenerPorCategoriaAsync(
+            categoriaId,
+            usuarioId);
     }
 }

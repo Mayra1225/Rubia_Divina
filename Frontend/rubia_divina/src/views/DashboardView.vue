@@ -70,7 +70,7 @@
       </p>
     </div>
 
-  <div v-if="productosMasVendidosDia.length" class="analytics-card">
+    <div v-if="productosMasVendidosDia.length" class="analytics-card">
       <h2>📊 Producto Más Vendido por Día</h2>
 
       <table class="analytics-table">
@@ -84,10 +84,7 @@
         </thead>
 
         <tbody>
-          <tr
-            v-for="item in productosMasVendidosDia"
-            :key="item.diaSemana"
-          >
+          <tr v-for="item in productosMasVendidosDia" :key="item.diaSemana">
             <td>{{ item.diaSemana }}</td>
 
             <td>{{ item.producto }}</td>
@@ -101,8 +98,7 @@
     </div>
 
     <div v-if="dashboard?.recomendacionPromocion" class="recomendation-card">
-
-      <h2> Recomendacion de Promoción</h2>
+      <h2>Recomendacion de Promoción</h2>
 
       <p>
         {{ dashboard.recomendacionPromocion }}
@@ -112,7 +108,17 @@
     <div class="section-header">
       <h2>Productos</h2>
 
-      <button class="add-btn" @click="showProductoModal = true">+ Nuevo Producto</button>
+      <div class="header-actions">
+        <select v-model="categoriaSeleccionada" @change="filtrarCategoria" class="categoria-select">
+          <option value="">Todas las categorías</option>
+
+          <option v-for="categoria in categorias" :key="categoria.id" :value="categoria.id">
+            {{ categoria.nombre }}
+          </option>
+        </select>
+
+        <button class="add-btn" @click="showProductoModal = true">+ Nuevo Producto</button>
+      </div>
     </div>
 
     <div class="products-grid">
@@ -152,15 +158,17 @@ import { RouterLink, useRouter } from 'vue-router'
 
 import {
   getProductos,
+  getProductosPorCategoria,
   createProducto,
   updateProducto,
   deleteProducto,
 } from '../services/productoService'
 
+import { getCategorias } from '../services/categoriaService'
+
 import { getDashboard } from '../services/dashboardService'
 
 import { getProductosMasVendidosDia } from '../services/dashboardService'
-
 
 import { getHorariosPico } from '../services/horarioPicoService'
 
@@ -180,6 +188,10 @@ const horarioPico = ref(null)
 
 const productos = ref([])
 
+const categorias = ref([])
+
+const categoriaSeleccionada = ref('')
+
 const showProductoModal = ref(false)
 
 const productoSeleccionado = ref(null)
@@ -197,11 +209,9 @@ async function cargarDashboard() {
 }
 
 async function cargarProductosMasVendidosDia() {
- const { data } = await getProductosMasVendidosDia()
+  const { data } = await getProductosMasVendidosDia()
 
- productosMasVendidosDia.value = data
-
- console.log(data)
+  productosMasVendidosDia.value = data
 }
 
 async function cargarHorarioPico() {
@@ -214,9 +224,34 @@ async function cargarHorarioPico() {
   }
 }
 
+async function cargarCategorias() {
+  try {
+    const { data } = await getCategorias()
+
+    categorias.value = data
+  } catch (error) {
+    console.log(error)
+  }
+}
+
 async function cargarProductos() {
   try {
     const { data } = await getProductos()
+
+    productos.value = data
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+async function filtrarCategoria() {
+  try {
+    if (!categoriaSeleccionada.value) {
+      await cargarProductos()
+      return
+    }
+
+    const { data } = await getProductosPorCategoria(categoriaSeleccionada.value)
 
     productos.value = data
   } catch (error) {
@@ -262,7 +297,12 @@ async function guardarProducto(payload) {
 
     cerrarModal()
 
-    await cargarProductos()
+    // Si hay un filtro aplicado, se mantiene
+    if (categoriaSeleccionada.value) {
+      await filtrarCategoria()
+    } else {
+      await cargarProductos()
+    }
   } catch (error) {
     console.log(error)
   }
@@ -274,7 +314,12 @@ async function eliminarProducto(id) {
   try {
     await deleteProducto(id)
 
-    await cargarProductos()
+    // Si hay un filtro aplicado, se mantiene
+    if (categoriaSeleccionada.value) {
+      await filtrarCategoria()
+    } else {
+      await cargarProductos()
+    }
   } catch (error) {
     console.log(error)
   }
@@ -290,6 +335,8 @@ onMounted(async () => {
   await cargarDashboard()
 
   await cargarHorarioPico()
+
+  await cargarCategorias()
 
   await cargarProductos()
 
@@ -442,15 +489,15 @@ onMounted(async () => {
   margin-bottom: 30px;
   padding: 25px;
   border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
-.analytics-card h2{
+.analytics-card h2 {
   color: #5d4037;
   margin-bottom: 20px;
 }
 
-.analytics-table{
+.analytics-table {
   width: 100%;
   border-collapse: collapse;
 }
@@ -476,7 +523,7 @@ onMounted(async () => {
   border-radius: 20px;
   padding: 25px;
   margin-bottom: 30px;
-  box-shadow: 0 4px 12px rgbd(0,0,0,.12);
+  box-shadow: 0 4px 12px rgbd(0, 0, 0, 0.12);
 }
 
 .recomendation-card h2 {
@@ -490,4 +537,31 @@ onMounted(async () => {
   line-height: 1.6;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.categoria-select {
+  min-width: 220px;
+  padding: 10px 15px;
+  border: 1px solid #d7ccc8;
+  border-radius: 10px;
+  background: white;
+  color: #5d4037;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.categoria-select:hover {
+  border-color: #8d6e63;
+}
+
+.categoria-select:focus {
+  outline: none;
+  border-color: #6d4c41;
+  box-shadow: 0 0 0 3px rgba(109, 76, 65, 0.15);
+}
 </style>

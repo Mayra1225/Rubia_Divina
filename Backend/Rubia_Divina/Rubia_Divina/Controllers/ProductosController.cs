@@ -52,6 +52,17 @@ public class ProductosController : ControllerBase
             : Ok(producto);
     }
 
+    [HttpGet("categoria/{categoriaId:int}")]
+    public async Task<IActionResult> GetPorCategoria(int categoriaId)
+    {
+        var productos =
+            await _productoService.ObtenerPorCategoriaAsync(
+                categoriaId,
+                ObtenerUsuarioId());
+
+        return Ok(productos);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] ProductoDTO dto)
     {
